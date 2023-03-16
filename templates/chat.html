@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .chat{
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat span{
+            margin-bottom: 10px;
+        }
+
+        form{
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chat"></div>
+
+    
+    <!-- socketio cdn -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.js"></script>
+
+    <script>
+
+        window.onload = function() {
+            const socket = io('http://127.0.0.1:5000');
+            
+            function addToChat(msg){
+                const span = document.createElement("span"); //criando elemento na tela que é o próprio span
+                const chat = document.querySelector(".chat");
+                span.innerHTML = `<strong>Imagem:</strong> <a href= "${msg}">${msg}</a> ` 
+                chat.append(span);
+            }
+
+            socket.on('connect', () => {
+                // envia mensagem ao conectar socket
+                socket.send('Usuário conectado ao socket!')
+            });
+
+
+            const form = document.getElementById("form_id");
+            form.addEventListener('submit', function(event) {
+
+                // previne refresh do browser ao submeter mensagem
+                event.preventDefault();
+
+                const file = event.target.photo.files[0];
+                const filename = file.name;
+                const filetype = file.type;
+                const fileBinary = file.slice(0, file.size, file.type);
+                const newfile = new File([fileBinary], filename, {type: filetype});
+                const formData = {file: newfile, filename: filename, content_type: filetype}
+                console.log(formData);
+
+                // pegar valor do nome do usuário e valor da mensagem de texto toda vez que usuário submeter mensagem
+                socket.emit('sendMessage', {file: newfile, filename: filename, content_type: filetype});
+                
+                //limpar valor do nome e valor da mensagem quando acontecer o submit, recebendo uma string vazia.
+                event.target.reset();
+
+            });
+            
+
+            
+
+            // criando evento que pega a mensagem do backend e colocando ela no span
+            socket.on('getMessage', (msg) => {
+                addToChat(msg)
+            });
+
+            // recebe o array de histórico de mensagens do backend
+            socket.on('message', (photos) => {
+                for(photo of photos){
+                    addToChat(photo)
+                }
+            })
+
+        }
+
+    </script>
+
+<div>
+    <form id="form_id" method="post" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+
+        {% for error in form.photo.errors %}
+            <span style="color: red;">{{ error }}</span>
+        {% endfor %}
+            
+            <div class="col-auto" id="photo">
+                {{ form.photo(class="form-control") }}
+            </div>
+        
+            <div class="col-auto">
+                {{ form.submit(class="btn btn-success") }}
+            </div>
+        </div>
+
+    </form>
+
+</div>
+    
+</body>
+</html>
