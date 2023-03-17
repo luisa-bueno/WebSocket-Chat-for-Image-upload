@@ -32,6 +32,7 @@ class UploadForm(FlaskForm):
             FileRequired('Não pode deixar o campo de imagem vazio')
         ],
     )
+    title = StringField('Título', description = 'Título da imagem')
     submit = SubmitField('Upload')
 
 messages = []
@@ -41,13 +42,19 @@ messages = []
 def upload_image_handler():
     form = UploadForm()    
     if form.validate_on_submit():
+
+        msg = {}
+
         photo = form.photo.data
+        title = form.title.data
+        msg['title'] = title
+
         filename = photos.save(photo)
         file_url = url_for('get_file_url', filename=filename)
-        messages.append(file_url)
-        print('\n\n')
-        print(messages)
-        print('\n\n')
+        msg['photo'] = file_url
+
+        messages.append(msg)
+
     else:
         file_url = None
         filename = None
@@ -62,10 +69,14 @@ def get_file_url(filename):
 
 @io.on('sendMessage')
 def send_message_handler(data):
+
+    msg = {}
     
     # Extrair o objeto File do evento de submissão do formulário e convertê-lo
     file_binary = data['file']
     bytes_io = BytesIO(file_binary)
+    title = data['title']
+    msg['title'] = title
 
     # Criar um objeto FileStorage a partir do objeto File
     photo = FileStorage(stream=bytes_io, filename=data['filename'], content_type=data['content_type'])
@@ -73,12 +84,13 @@ def send_message_handler(data):
     # Salvar a foto e obter sua URL
     filename = photos.save(photo)
     file_url = url_for('get_file_url', filename=filename)
+    msg['photo'] = file_url
 
     # Adicionar a URL à lista de mensagens
-    messages.append(file_url)
+    messages.append(msg)
 
     # Transmitir a URL para todos os clientes conectados
-    emit('getMessage', file_url, broadcast=True)
+    emit('getMessage', msg, broadcast=True)
 
 
 

@@ -35,7 +35,7 @@
             function addToChat(msg){
                 const span = document.createElement("span"); //criando elemento na tela que é o próprio span
                 const chat = document.querySelector(".chat");
-                span.innerHTML = `<strong>Imagem:</strong> <a href= "${msg}">${msg}</a> ` 
+                span.innerHTML = `<strong>${msg.title}</strong> <a href= "${msg.photo}">${msg.photo}</a> ` 
                 chat.append(span);
             }
 
@@ -51,6 +51,11 @@
                 // previne refresh do browser ao submeter mensagem
                 event.preventDefault();
 
+                console.log(event.target);
+
+                const title = event.target[1].value;
+                console.log(title);
+
                 const file = event.target.photo.files[0];
                 const filename = file.name;
                 const filetype = file.type;
@@ -60,7 +65,7 @@
                 console.log(formData);
 
                 // pegar valor do nome do usuário e valor da mensagem de texto toda vez que usuário submeter mensagem
-                socket.emit('sendMessage', {file: newfile, filename: filename, content_type: filetype});
+                socket.emit('sendMessage', {title: title, file: newfile, filename: filename, content_type: filetype});
                 
                 //limpar valor do nome e valor da mensagem quando acontecer o submit, recebendo uma string vazia.
                 event.target.reset();
@@ -93,14 +98,17 @@
         {% for error in form.photo.errors %}
             <span style="color: red;">{{ error }}</span>
         {% endfor %}
+
+        <div class="col-auto" id="title">
+            {{ form.title(placeholder = form.title.description, class="form-control") }}
+        </div>
             
-            <div class="col-auto" id="photo">
-                {{ form.photo(class="form-control") }}
-            </div>
-        
-            <div class="col-auto">
-                {{ form.submit(class="btn btn-success") }}
-            </div>
+        <div class="col-auto" id="photo">
+            {{ form.photo(class="form-control") }}
+        </div>
+    
+        <div class="col-auto">
+            {{ form.submit(class="btn btn-success") }}
         </div>
 
     </form>
